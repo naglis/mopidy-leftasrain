@@ -105,7 +105,7 @@ class LeftAsRain(object):
 
         if not self._total:
             try:
-                self._total = int(self._fetch_song(-1)["id"]) + 1
+                self._total = int(self._fetch_song(-1, use_cache=False)["id"]) + 1
             except Exception as e:
                 logger.exception(str(e))
                 self._total = 0
@@ -123,13 +123,13 @@ class LeftAsRain(object):
             with open(self.db_filename, "r") as f:
                 self._db = json.load(f)
 
-    def _fetch_song(self, song_id):
+    def _fetch_song(self, song_id, use_cache=True):
         """Returns a list of song attributes"""
 
         if not isinstance(song_id, int):
             song_id = int(song_id)
 
-        if str(song_id) in self._db:
+        if use_cache and str(song_id) in self._db:
             logger.debug("leftasrain: db hit for ID: %d" % song_id)
             return self._db[str(song_id)]
 
@@ -139,7 +139,8 @@ class LeftAsRain(object):
         try:
             result = urllib2.urlopen(url, timeout=self._timeout)
             data = map_song_data(json.load(result))
-            self._db[str(song_id)] = data
+            if use_cache:
+                self._db[str(song_id)] = data
             return data
         except urllib2.HTTPError as e:
             logger.debug("Fetch failed, HTTP %s: %s", e.code, e.reason)
