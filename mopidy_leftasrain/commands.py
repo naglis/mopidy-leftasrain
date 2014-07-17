@@ -27,7 +27,8 @@ class LeftAsRainPullCommand(commands.Command):
         count = len(leftasrain.songs)
         logger.info("%d songs already in leftasrain DB." % count)
 
-        logger.info("Got a total of %d songs on leftasrain.com" % leftasrain.total)
+        logger.info("There are a total of %d songs on leftasrain.com" %
+                    leftasrain.total)
 
         try:
             for id_ in range(1, leftasrain.total):
