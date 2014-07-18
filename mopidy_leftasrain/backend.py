@@ -39,6 +39,16 @@ class LeftAsRainLibraryProvider(backend.LibraryProvider):
             logger.info("Looking up all leftasrain tracks")
             return self.backend.leftasrain.tracks_from_filter(lambda x: True,
                                                               remote_url=True)
+        elif uri.startswith("leftasrain:last:"):
+            try:
+                total = self.backend.leftasrain.total
+                n = max([1, total - int(uri.rpartition(":")[2])])
+                return [
+                    self.backend.leftasrain.track_from_id(id_, remote_url=True)
+                    for id_ in xrange(n, total)]
+            except ValueError as e:
+                logger.exception(str(e))
+                return []
         else:
             try:
                 self.backend.leftasrain.validate_lookup_uri(uri)
