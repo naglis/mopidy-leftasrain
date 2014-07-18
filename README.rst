@@ -45,6 +45,15 @@ To make use of this extenstion, it is recommended to first run::
 to pull all leftasrain.com songs to a local database (note: this might take a
 while).
 
+Shorthands
+==========
+
+There are currently two additional lookup shorthands, when adding songs to
+Mopidy: `leftasrain:all` and `leftasrain:last:<n>`.
+
+`leftasrain:all` will add all currently available (in local database) songs.
+`leftasrain:last:<n>` will add the last `n` songs from leftasrain.com (will
+pull, if the songs are not in local database already).
 
 Project resources
 =================
@@ -56,6 +65,16 @@ Project resources
 
 Changelog
 =========
+
+v0.0.2 (2014-07-18)
+----------------------------------------
+
+- Add leftasrain:last:n lookup shorthand
+
+v0.0.1.1 (2014-07-17)
+----------------------------------------
+
+- Fix repeated song pull bug.
 
 v0.0.1 (2014-06-24)
 ----------------------------------------
