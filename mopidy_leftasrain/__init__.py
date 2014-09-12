@@ -6,9 +6,8 @@ import os
 from mopidy import config, ext
 
 
-__version__ = '0.0.2'
+__version__ = '0.0.3'
 
-# TODO: If you need to log, use loggers named after the current Python module
 logger = logging.getLogger(__name__)
 
 
@@ -34,6 +33,5 @@ class LeftAsRainExtension(ext.Extension):
 
     def setup(self, registry):
 
-        # TODO: Edit or remove entirely
         from .backend import LeftAsRainBackend
         registry.add("backend", LeftAsRainBackend)
