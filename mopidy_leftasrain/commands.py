@@ -32,11 +32,9 @@ class LeftAsRainPullCommand(commands.Command):
 
         try:
             for id_ in range(1, leftasrain.total):
-
                 if str(id_) in leftasrain.ids:
                     continue
 
-                logger.debug("Looking up leftasrain song with ID: %d" % id_)
                 leftasrain.track_from_id(id_)
 
                 diff = leftasrain.total - len(leftasrain.songs)

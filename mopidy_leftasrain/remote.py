@@ -10,19 +10,19 @@ from mopidy.models import Track, Album, Artist
 
 from . import logger
 
-COVER_URL = u"http://www.leftasrain.com/img/covers/%s"
-SONG_URL = u"http://leftasrain.com/musica/"
-NEXT_TRACK_URL = u"http://leftasrain.com/getNextTrack.php?%s"
+COVER_URL = "http://leftasrain.com/img/covers/%s"
+SONG_URL = "http://leftasrain.com/musica/"
+NEXT_TRACK_URL = "http://leftasrain.com/getNextTrack.php?%s"
 
 FIELD_MAPPING = {
-    0: u"id",
-    1: u"date",
-    2: u"track_name",
-    3: u"album",
-    4: u"url",
-    5: u"comment",
-    8: u"cover",
-    9: u"post",
+    0: "id",
+    1: "date",
+    2: "track_name",
+    3: "album",
+    4: "url",
+    5: "comment",
+    8: "cover",
+    9: "post",
 }
 
 
@@ -89,6 +89,7 @@ class LeftAsRain(object):
         self._timeout = timeout
         self._total = None
         self.db_filename = db_filename
+        self._db_changed = False
         self._db = {}
 
     @property
@@ -105,23 +106,34 @@ class LeftAsRain(object):
 
         if not self._total:
             try:
-                self._total = int(self._fetch_song(-1, use_cache=False)["id"]) + 1
+                self._total = int(
+                    self._fetch_song(-1, use_cache=False)["id"]) + 1
             except Exception as e:
                 logger.exception(str(e))
                 self._total = 0
 
         return self._total
 
-    def save_db(self):
+    def maybe_save(self):
+        if self._db_changed:
+            self.save_db()
 
-        with open(self.db_filename, "w") as f:
-            json.dump(self._db, f, indent=4)
+    def save_db(self):
+        logger.info("Saving leftasrain DB to: %s" % self.db_filename)
+        try:
+            with open(self.db_filename, "w") as f:
+                json.dump(self._db, f, indent=4)
+        except Exception as e:
+            logger.exception("Error while saving: %s" % str(e))
+        else:
+            self._db_changed = False
 
     def load_db(self):
-
         if os.path.exists(self.db_filename):
+            logger.debug("Loading leftasrain DB: %s" % self.db_filename)
             with open(self.db_filename, "r") as f:
                 self._db = json.load(f)
+            logger.debug("%d songs loaded" % len(self._db))
 
     def _fetch_song(self, song_id, use_cache=True):
         """Returns a list of song attributes"""
@@ -130,7 +142,7 @@ class LeftAsRain(object):
             song_id = int(song_id)
 
         if use_cache and str(song_id) in self._db:
-            logger.debug("leftasrain: db hit for ID: %d" % song_id)
+            logger.debug("leftasrain: DB hit for ID: %d" % song_id)
             return self._db[str(song_id)]
 
         params = urllib.urlencode({"currTrackEntry": song_id + 1,
@@ -141,6 +153,7 @@ class LeftAsRain(object):
             data = map_song_data(json.load(result))
             if use_cache:
                 self._db[str(song_id)] = data
+                self._db_changed = True
             return data
         except urllib2.HTTPError as e:
             logger.debug("Fetch failed, HTTP %s: %s", e.code, e.reason)
