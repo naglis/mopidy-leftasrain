@@ -51,8 +51,8 @@ Shorthands
 There are currently two additional lookup shorthands, when adding songs to
 Mopidy: `leftasrain:all` and `leftasrain:last:<n>`.
 
-`leftasrain:all` will add all currently available (in local database) songs.
-`leftasrain:last:<n>` will add the last `n` songs from leftasrain.com (will
+``leftasrain:all`` will add all currently available (in local database) songs.
+``leftasrain:last:<n>`` will add the last ``n`` songs from leftasrain.com (will
 pull, if the songs are not in local database already).
 
 Project resources
@@ -65,6 +65,11 @@ Project resources
 
 Changelog
 =========
+
+v0.0.3 (2014-09-12)
+----------------------------------------
+
+- Save DB after queries
 
 v0.0.2 (2014-07-18)
 ----------------------------------------
