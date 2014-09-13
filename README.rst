@@ -49,7 +49,7 @@ Shorthands
 ==========
 
 There are currently two additional lookup shorthands, when adding songs to
-Mopidy: `leftasrain:all` and `leftasrain:last:<n>`.
+Mopidy: ``leftasrain:all`` and ``leftasrain:last:<n>``.
 
 ``leftasrain:all`` will add all currently available (in local database) songs.
 ``leftasrain:last:<n>`` will add the last ``n`` songs from leftasrain.com (will
@@ -65,6 +65,11 @@ Project resources
 
 Changelog
 =========
+
+v0.0.3.1 (2014-09-13)
+----------------------------------------
+
+- Remove newlines in comments
 
 v0.0.3 (2014-09-12)
 ----------------------------------------
