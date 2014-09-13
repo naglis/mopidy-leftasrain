@@ -131,7 +131,7 @@ class LeftAsRain(object):
     def load_db(self):
         if os.path.exists(self.db_filename):
             logger.debug('Loading leftasrain DB: %s' % self.db_filename)
-            with open(self.db_filename, "r") as f:
+            with open(self.db_filename, 'r') as f:
                 self._db = json.load(f)
             logger.debug('%d songs loaded' % len(self._db))
 
@@ -161,10 +161,10 @@ class LeftAsRain(object):
             logger.debug('Fetch failed: %s', e)
 
     def validate_lookup_uri(self, uri):
-        if "." not in uri:
+        if '.' not in uri:
             raise ValueError('Wrong leftasrain URI format')
         try:
-            id_ = uri.split(".")[-1]
+            id_ = uri.split('.')[-1]
             if not id_.isdigit():
                 raise ValueError('leftasrain song ID must be a positive int')
             if int(id_) >= self.total:

@@ -23,8 +23,8 @@ class LeftAsRainExtension(ext.Extension):
 
     def get_config_schema(self):
         schema = super(LeftAsRainExtension, self).get_config_schema()
-        schema["db_filename"] = config.Path(optional=True)
-        schema["timeout"] = config.Integer(minimum=0)
+        schema['db_filename'] = config.Path(optional=True)
+        schema['timeout'] = config.Integer(minimum=0)
         return schema
 
     def get_command(self):
@@ -34,4 +34,4 @@ class LeftAsRainExtension(ext.Extension):
     def setup(self, registry):
 
         from .backend import LeftAsRainBackend
-        registry.add("backend", LeftAsRainBackend)
+        registry.add('backend', LeftAsRainBackend)
