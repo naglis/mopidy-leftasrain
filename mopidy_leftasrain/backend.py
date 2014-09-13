@@ -2,13 +2,12 @@
 from __future__ import unicode_literals
 import urlparse
 
-from mopidy import backend
-from mopidy.models import SearchResult
-
-import pykka
-
 from . import logger
 from .remote import LeftAsRain
+
+import pykka
+from mopidy import backend
+from mopidy.models import SearchResult
 
 
 class LeftAsRainBackend(pykka.ThreadingActor, backend.Backend):
@@ -27,9 +26,6 @@ class LeftAsRainLibraryProvider(backend.LibraryProvider):
     def __init__(self, backend):
         super(LeftAsRainLibraryProvider, self).__init__(backend)
         self.backend.leftasrain.load_db()
-
-    def __del__(self):
-        self.backend.leftastain.save_db()
 
     def _filter(self, types, queries, track):
         return any([
