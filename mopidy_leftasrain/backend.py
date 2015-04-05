@@ -68,7 +68,9 @@ class LeftAsRainLibraryProvider(backend.LibraryProvider):
         self.backend.leftasrain.maybe_save()
         return result
 
-    def search(self, query=None, uris=None):
+    def search(self, query=None, uris=None, exact=False):
+        # TODO Support exact search
+
         filters = []
 
         def make_filter(types, queries):
