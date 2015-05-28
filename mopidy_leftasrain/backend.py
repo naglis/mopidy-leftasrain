@@ -11,14 +11,24 @@ from mopidy.models import SearchResult
 
 
 class LeftAsRainBackend(pykka.ThreadingActor, backend.Backend):
+    uri_schemes = ['leftasrain']
 
     def __init__(self, config, audio):
         super(LeftAsRainBackend, self).__init__()
         self.config = config
         self.leftasrain = LeftAsRain(config['leftasrain']['timeout'],
                                      config['leftasrain']['db_filename'])
+        self.playback = LeftAsRainPlaybackProvider(audio, self)
         self.library = LeftAsRainLibraryProvider(backend=self)
-        self.uri_schemes = ['leftasrain']
+
+
+class LeftAsRainPlaybackProvider(backend.PlaybackProvider):
+
+    def translate_uri(self, uri):
+        id_ = uri.split('.')[-1]
+        track = self.backend.leftasrain.track_from_id(id_, remote_url=True)
+        if track:
+            return track.uri
 
 
 class LeftAsRainLibraryProvider(backend.LibraryProvider):
