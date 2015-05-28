@@ -3,11 +3,31 @@ from __future__ import unicode_literals
 import urlparse
 
 from . import logger
-from .remote import LeftAsRain
+from .remote import LeftAsRain, SONG_URL, COVER_URL
 
-import pykka
 from mopidy import backend
-from mopidy.models import SearchResult
+from mopidy.models import Album, Artist, SearchResult, Track
+import pykka
+
+
+def track_from_song_data(data, remote_url=False):
+    if remote_url:
+        uri = urlparse.urljoin(SONG_URL, '%s.mp3' % data['url'])
+    else:
+        uri = 'leftasrain:track:{artist:s} - {track_name:s}.{id:s}'.format(
+            **data)
+
+    return Track(
+        name=data['track_name'],
+        artists=[Artist(name=data['artist'])],
+        album=Album(name='leftasrain.com',
+                    images=[COVER_URL.format(**data)]),
+        comment=data['comment'].replace('\n', ''),
+        date=data['date'],
+        track_no=int(data['id']),
+        last_modified=data['last_modified'],
+        uri=uri
+    )
 
 
 class LeftAsRainBackend(pykka.ThreadingActor, backend.Backend):
@@ -26,8 +46,9 @@ class LeftAsRainPlaybackProvider(backend.PlaybackProvider):
 
     def translate_uri(self, uri):
         id_ = uri.split('.')[-1]
-        track = self.backend.leftasrain.track_from_id(id_, remote_url=True)
-        if track:
+        song_data = self.backend.leftasrain.song_from_id(id_)
+        if song_data:
+            track = track_from_song_data(song_data, remote_url=True)
             return track.uri
 
 
@@ -48,31 +69,32 @@ class LeftAsRainLibraryProvider(backend.LibraryProvider):
             return []
 
         result = []
+        song_from_id = self.backend.leftasrain.song_from_id
         if uri == 'leftasrain:all':
             logger.info('Looking up all leftasrain tracks')
-            result = self.backend.leftasrain.tracks_from_filter(
-                lambda x: True, remote_url=True)
+            result = [
+                track_from_song_data(s, remote_url=True)
+                for s in self.backend.leftasrain.songs]
         elif uri.startswith('leftasrain:last:'):
             try:
                 total = self.backend.leftasrain.total
                 n = max([1, total - int(uri.rpartition(':')[2])])
                 result = [
-                    self.backend.leftasrain.track_from_id(id_, remote_url=True)
+                    track_from_song_data(song_from_id(id_), remote_url=True)
                     for id_ in xrange(n, total)]
             except ValueError as e:
-                logger.exception(str(e))
+                logger.exception(e)
                 result = []
         else:
             try:
                 self.backend.leftasrain.validate_lookup_uri(uri)
                 id_ = uri.split('.')[-1]
-                logger.info('Looking up leftasrain track with ID: %s' % id_)
+                logger.info('Looking up leftasrain track with ID: %s', id_)
                 result = [
-                    self.backend.leftasrain.track_from_id(id_,
-                                                          remote_url=True)
+                    track_from_song_data(song_from_id(id_), remote_url=True)
                 ]
             except ValueError as e:
-                logger.exception(str(e))
+                logger.exception(e)
                 result = []
 
         self.backend.leftasrain.maybe_save()
@@ -106,5 +128,6 @@ class LeftAsRainLibraryProvider(backend.LibraryProvider):
 
         return SearchResult(
             uri='leftasrain:search',
-            tracks=self.backend.leftasrain.tracks_from_filter(f)
+            tracks=map(track_from_song_data,
+                       filter(f, self.backend.leftasrain.songs))
         )
