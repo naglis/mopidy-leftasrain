@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+
 import urlparse
 
+from .remote import COVER_URL, LeftAsRain, SONG_URL
 from . import logger
-from .remote import LeftAsRain, SONG_URL, COVER_URL
 
 from mopidy import backend
 from mopidy.models import Album, Artist, SearchResult, Track
@@ -35,10 +36,11 @@ class LeftAsRainBackend(pykka.ThreadingActor, backend.Backend):
 
     def __init__(self, config, audio):
         super(LeftAsRainBackend, self).__init__()
+        self.audio = audio
         self.config = config
         self.leftasrain = LeftAsRain(config['leftasrain']['timeout'],
                                      config['leftasrain']['db_filename'])
-        self.playback = LeftAsRainPlaybackProvider(audio, self)
+        self.playback = LeftAsRainPlaybackProvider(audio=audio, backend=self)
         self.library = LeftAsRainLibraryProvider(backend=self)
 
 

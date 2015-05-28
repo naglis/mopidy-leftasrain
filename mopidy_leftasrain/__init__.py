@@ -32,6 +32,5 @@ class LeftAsRainExtension(ext.Extension):
         return LeftAsRainCommand()
 
     def setup(self, registry):
-
         from .backend import LeftAsRainBackend
         registry.add('backend', LeftAsRainBackend)

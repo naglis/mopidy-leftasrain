@@ -1,6 +1,7 @@
 from __future__ import unicode_literals
 
 import re
+
 from setuptools import find_packages, setup
 
 
