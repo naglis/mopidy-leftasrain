@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 
 import json
 import os
+import socket
 import time
 import urllib
 import urllib2
@@ -82,8 +83,12 @@ class LeftAsRain(object):
 
         if not self._total:
             try:
-                self._total = int(
-                    self._fetch_song(-1, use_cache=False)['id']) + 1
+                last_track = self._fetch_song(-1, use_cache=False)
+                if not last_track:
+                    logger.error('Unable to get total track count')
+                    self._total = 0
+                else:
+                    self._total = int(last_track.get('id', 0)) + 1
             except Exception as e:
                 logger.exception(e)
                 self._total = 0
@@ -111,8 +116,9 @@ class LeftAsRain(object):
                 self._db = json.load(f)
             logger.info('%d LeftAsRain songs loaded', len(self._db))
 
-    def _fetch_song(self, song_id, use_cache=True):
+    def _fetch_song(self, song_id, use_cache=True, max_retries=3):
         """Returns a list of song attributes"""
+        attempt = 0
 
         if not isinstance(song_id, int):
             song_id = int(song_id)
@@ -124,17 +130,22 @@ class LeftAsRain(object):
         params = urllib.urlencode({'currTrackEntry': song_id + 1,
                                    'shuffle': 'false'})
         url = NEXT_TRACK_URL % params
-        try:
-            result = urllib2.urlopen(url, timeout=self._timeout)
-            data = map_song_data(json.load(result))
-            if use_cache:
-                self._db[str(song_id)] = data
-                self._db_changed = True
-            return data
-        except urllib2.HTTPError as e:
-            logger.exception('Fetch failed, HTTP %s: %s', e.code, e.reason)
-        except (IOError, ValueError) as e:
-            logger.exception('Fetch failed: %s', e)
+        while attempt < max_retries:
+            attempt += 1
+            try:
+                result = urllib2.urlopen(url, timeout=self._timeout)
+                data = map_song_data(json.load(result))
+                if use_cache:
+                    self._db[str(song_id)] = data
+                    self._db_changed = True
+                return data
+            except (urllib2.HTTPError, urllib2.URLError, socket.gaierror,
+                    socket.timeout) as e:
+                logger.exception('Fetch failed: %s', e)
+            except (IOError, ValueError) as e:
+                logger.exception('Fetch failed for unkown reason: %s', e)
+                break  # Do not retry.
+        return {}
 
     def validate_lookup_uri(self, uri):
         if '.' not in uri:
