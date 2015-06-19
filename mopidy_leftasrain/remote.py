@@ -27,19 +27,21 @@ FIELD_MAPPING = {
 
 def split_title(t):
     """Split (artist, title) from "artist - title" """
-
-    artist, title = '', ''
-    try:
-        values = t.split(' - ')
-        artist = values[0]
-        if len(values) > 2:
-            title = ' - '.join(values[1:])
-        else:
-            title = values[1]
-    except IndexError:
-        title = t
-    finally:
-        return artist, title
+    artist, title = 'Unknown artist', 'Unknown title'
+    if '-' not in t:
+        if t:
+            title = t
+    else:
+        try:
+            values = t.split(' - ')
+            artist = values[0]
+            if len(values) > 2:
+                title = ' - '.join(values[1:])
+            else:
+                title = values[1]
+        except IndexError:
+            title = t
+    return artist, title
 
 
 def map_song_data(data):
