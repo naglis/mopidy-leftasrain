@@ -3,12 +3,13 @@ from __future__ import unicode_literals
 
 import urlparse
 
-from .remote import COVER_URL, LeftAsRain, SONG_URL
-from . import logger
-
 from mopidy import backend
 from mopidy.models import Album, Artist, SearchResult, Track
+
 import pykka
+
+from . import logger
+from .remote import COVER_URL, LeftAsRain, SONG_URL
 
 
 def track_from_song_data(data, remote_url=False):
@@ -112,6 +113,11 @@ class LeftAsRainLibraryProvider(backend.LibraryProvider):
                 return self._filter(types, queries, t)
             return f
 
+        def make_or_filter(filters):
+            def f(t):
+                return any([f_(t) for f_ in filters])
+            return f
+
         if query:
             if 'any' in query:
                 filters.append(make_filter(['artist', 'album', 'track_name'],
@@ -126,7 +132,7 @@ class LeftAsRainLibraryProvider(backend.LibraryProvider):
                                            query.get('track_name', [])))
 
         # build one filter from a list of filters
-        f = lambda t: any([f_(t) for f_ in filters])
+        f = make_or_filter(filters)
 
         return SearchResult(
             uri='leftasrain:search',

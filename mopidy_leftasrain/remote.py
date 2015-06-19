@@ -8,7 +8,6 @@ import urllib2
 
 from . import logger
 
-
 COVER_URL = 'http://leftasrain.com/img/covers/{cover:s}'
 SONG_URL = 'http://leftasrain.com/musica/'
 NEXT_TRACK_URL = 'http://leftasrain.com/getNextTrack.php?%s'
@@ -44,7 +43,6 @@ def split_title(t):
 
 def map_song_data(data):
     """Map a list of song attributes to a dict with meaningful keys"""
-
     result = {}
     for i, v in enumerate(data):
         if i not in FIELD_MAPPING:
