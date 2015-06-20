@@ -118,6 +118,11 @@ class LeftAsRain(object):
                 self._db = json.load(f)
             logger.info('%d LeftAsRain songs loaded', len(self._db))
 
+    def create_cache_dir(self):
+        dir_name = os.path.dirname(self.db_filename)
+        if not os.path.isdir(dir_name):
+            os.makedirs(dir_name)
+
     def _fetch_song(self, song_id, use_cache=True, max_retries=3):
         """Returns a list of song attributes"""
         attempt = 0

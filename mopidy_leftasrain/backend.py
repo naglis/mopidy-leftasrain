@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 import urlparse
 
 from mopidy import backend
+from mopidy.exceptions import BackendError
 from mopidy.models import Album, Artist, SearchResult, Track
 
 import pykka
@@ -41,6 +42,10 @@ class LeftAsRainBackend(pykka.ThreadingActor, backend.Backend):
         self.config = config
         self.leftasrain = LeftAsRain(config['leftasrain']['timeout'],
                                      config['leftasrain']['db_filename'])
+        try:
+            self.leftasrain.create_cache_dir()
+        except OSError as e:
+            raise BackendError(e)
         self.playback = LeftAsRainPlaybackProvider(audio=audio, backend=self)
         self.library = LeftAsRainLibraryProvider(backend=self)
 
