@@ -1,11 +1,11 @@
+from mopidy import commands
+
 from . import logger
 from .remote import LeftAsRain
 
-from mopidy import commands
-
 
 class LeftAsRainCommand(commands.Command):
-    help = 'Some text that will show up in --help'
+    help = 'Help for leftasrain command'
 
     def __init__(self):
         super(LeftAsRainCommand, self).__init__()

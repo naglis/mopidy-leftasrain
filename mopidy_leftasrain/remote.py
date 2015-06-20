@@ -2,16 +2,14 @@ from __future__ import unicode_literals
 
 import json
 import os
+import socket
 import time
 import urllib
 import urllib2
-import urlparse
 
 from . import logger
-from mopidy.models import Track, Album, Artist
 
-
-COVER_URL = 'http://leftasrain.com/img/covers/%s'
+COVER_URL = 'http://leftasrain.com/img/covers/{cover:s}'
 SONG_URL = 'http://leftasrain.com/musica/'
 NEXT_TRACK_URL = 'http://leftasrain.com/getNextTrack.php?%s'
 
@@ -27,46 +25,27 @@ FIELD_MAPPING = {
 }
 
 
-def track_from_song_data(data, remote_url=False):
-    if remote_url:
-        uri = urlparse.urljoin(SONG_URL, '%s.mp3' % data['url'])
-    else:
-        uri = 'leftasrain:track:%s - %s.%s' % (data['artist'],
-                                               data['track_name'],
-                                               data['id'])
-    return Track(
-        name=data['track_name'],
-        artists=[Artist(name=data['artist'])],
-        album=Album(name='Leftasrain',
-                    images=[COVER_URL % data['cover']]),
-        comment=data['comment'].replace('\n', ''),
-        date=data['date'],
-        track_no=int(data['id']),
-        last_modified=data['last_modified'],
-        uri=uri
-    )
-
-
 def split_title(t):
     """Split (artist, title) from "artist - title" """
-
-    artist, title = '', ''
-    try:
-        values = t.split(' - ')
-        artist = values[0]
-        if len(values) > 2:
-            title = ' - '.join(values[1:])
-        else:
-            title = values[1]
-    except IndexError:
-        title = t
-    finally:
-        return artist, title
+    artist, title = 'Unknown artist', 'Unknown title'
+    if '-' not in t:
+        if t:
+            title = t
+    else:
+        try:
+            values = t.split(' - ')
+            artist = values[0]
+            if len(values) > 2:
+                title = ' - '.join(values[1:])
+            else:
+                title = values[1]
+        except IndexError:
+            title = t
+    return artist, title
 
 
 def map_song_data(data):
     """Map a list of song attributes to a dict with meaningful keys"""
-
     result = {}
     for i, v in enumerate(data):
         if i not in FIELD_MAPPING:
@@ -106,10 +85,14 @@ class LeftAsRain(object):
 
         if not self._total:
             try:
-                self._total = int(
-                    self._fetch_song(-1, use_cache=False)['id']) + 1
+                last_track = self._fetch_song(-1, use_cache=False)
+                if not last_track:
+                    logger.error('Unable to get total track count')
+                    self._total = 0
+                else:
+                    self._total = int(last_track.get('id', 0)) + 1
             except Exception as e:
-                logger.exception(str(e))
+                logger.exception(e)
                 self._total = 0
 
         return self._total
@@ -119,46 +102,57 @@ class LeftAsRain(object):
             self.save_db()
 
     def save_db(self):
-        logger.info('Saving leftasrain DB to: %s' % self.db_filename)
+        logger.info('Saving leftasrain DB to: %s', self.db_filename)
         try:
             with open(self.db_filename, 'w') as f:
                 json.dump(self._db, f, indent=4)
         except Exception as e:
-            logger.exception('Error while saving: %s' % str(e))
+            logger.exception('Error while saving: %s', e)
         else:
             self._db_changed = False
 
     def load_db(self):
         if os.path.exists(self.db_filename):
-            logger.debug('Loading leftasrain DB: %s' % self.db_filename)
+            logger.info('Loading leftasrain DB: %s', self.db_filename)
             with open(self.db_filename, 'r') as f:
                 self._db = json.load(f)
-            logger.debug('%d songs loaded' % len(self._db))
+            logger.info('%d LeftAsRain songs loaded', len(self._db))
 
-    def _fetch_song(self, song_id, use_cache=True):
+    def create_cache_dir(self):
+        dir_name = os.path.dirname(self.db_filename)
+        if not os.path.isdir(dir_name):
+            os.makedirs(dir_name)
+
+    def _fetch_song(self, song_id, use_cache=True, max_retries=3):
         """Returns a list of song attributes"""
+        attempt = 0
 
         if not isinstance(song_id, int):
             song_id = int(song_id)
 
         if use_cache and str(song_id) in self._db:
-            logger.debug('leftasrain: DB hit for ID: %d' % song_id)
+            logger.debug('leftasrain: DB hit for ID: %d', song_id)
             return self._db[str(song_id)]
 
         params = urllib.urlencode({'currTrackEntry': song_id + 1,
                                    'shuffle': 'false'})
         url = NEXT_TRACK_URL % params
-        try:
-            result = urllib2.urlopen(url, timeout=self._timeout)
-            data = map_song_data(json.load(result))
-            if use_cache:
-                self._db[str(song_id)] = data
-                self._db_changed = True
-            return data
-        except urllib2.HTTPError as e:
-            logger.debug('Fetch failed, HTTP %s: %s', e.code, e.reason)
-        except (IOError, ValueError) as e:
-            logger.debug('Fetch failed: %s', e)
+        while attempt < max_retries:
+            attempt += 1
+            try:
+                result = urllib2.urlopen(url, timeout=self._timeout)
+                data = map_song_data(json.load(result))
+                if use_cache:
+                    self._db[str(song_id)] = data
+                    self._db_changed = True
+                return data
+            except (urllib2.HTTPError, urllib2.URLError, socket.gaierror,
+                    socket.timeout) as e:
+                logger.exception('Fetch failed: %s', e)
+            except (IOError, ValueError) as e:
+                logger.exception('Fetch failed for unkown reason: %s', e)
+                break  # Do not retry.
+        return {}
 
     def validate_lookup_uri(self, uri):
         if '.' not in uri:
@@ -172,10 +166,5 @@ class LeftAsRain(object):
         except Exception as e:
             raise ValueError('Error while validating URI: %s' % str(e))
 
-    def track_from_id(self, id_, remote_url=False):
-        s = self._fetch_song(id_)
-        return track_from_song_data(s, remote_url)
-
-    def tracks_from_filter(self, f, remote_url=False):
-        return map(lambda t: track_from_song_data(t, remote_url),
-                   filter(f, self._db.itervalues()))
+    def song_from_id(self, id_):
+        return self._fetch_song(id_)
