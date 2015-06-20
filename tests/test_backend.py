@@ -19,7 +19,7 @@ class TestTrackFromSongData(unittest.TestCase):
             'cover': 'test_cover',
             'comment': 'cover_test',
             'date': '',
-            'last_modified': '',
+            'last_modified': 0,
         }
 
     def test_remote_url_true_forms_correct_url(self):
