@@ -66,12 +66,16 @@ Project resources
 Changelog
 =========
 
-v0.1.0 (UNRELEASED)
+v0.1.0 (2015-06-20)
 -------------------
 
 - Require Mopidy >= 1.0
 
 - Update to work with backend API changes in Mopidy 1.0
+
+- Retry when fetching song information
+
+- Attempt to create cache directory upon startup
 
 v0.0.3.1 (2014-09-13)
 ----------------------------------------
