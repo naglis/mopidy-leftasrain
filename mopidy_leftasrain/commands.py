@@ -35,7 +35,7 @@ class LeftAsRainPullCommand(commands.Command):
                 if str(id_) in leftasrain.ids:
                     continue
 
-                leftasrain.track_from_id(id_)
+                leftasrain.song_from_id(id_)
 
                 diff = leftasrain.total - len(leftasrain.songs)
                 if diff % 50 == 0:
