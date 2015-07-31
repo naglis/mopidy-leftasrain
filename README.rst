@@ -66,6 +66,11 @@ Project resources
 Changelog
 =========
 
+v0.1.1 (2015-07-31)
+-------------------
+
+- Fix a leftover typo in commands (PR #2 by @jeffleder)
+
 v0.1.0 (2015-06-20)
 -------------------
 
